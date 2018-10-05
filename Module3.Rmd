@@ -36,9 +36,40 @@ td{
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.align = "center")
 ```
 
+## Executive summary
+## Introduction
+## Results
+## Conclusion
+
 ## Importing data
 
 ```{r import}
 library(tidyverse)
 library(gridExtra)
+data <- read_table("mouse.txt")
 ```
+
+## Cleaning data
+```{r}
+data = data %>% mutate(
+  sex = if_else(sex == 1, "Male", "Female"),
+  DNA = case_when(DNA == 1 ~ "141G6",
+                  DNA == 2 ~ "152F7", 
+                  DNA == 3 ~ "230E8",
+                  DNA == 4 ~ "285E6"),
+  cage = factor(cage),
+  tg = if_else(tg == 1, "Transgenic", "Non-transgenic")
+)
+
+data = data %>% 
+  mutate(
+    DNAfragment = case_when(
+      tg == "Transgenic" ~ DNA,
+      TRUE ~ "No trisomy"
+    )
+  )
+# check the numbers match up
+data %>% count(DNAfragment)
+data %>% group_by(tg, DNA) %>% count()
+```
+
