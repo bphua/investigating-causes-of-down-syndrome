@@ -41,6 +41,21 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.align =
 ## Results
 ## Conclusion
 
+## Things to keep in mind
+For this module report you will be assessed on your ability to generate appropriate statistical questions, explore these with graphical summaries and statistical tests and interpret your findings. To achieve full marks, your report will also need to be well-presented:
+
+Think about how your report might be structured (e.g. Executive Summary, Introduction, Results, Conclusion).
+Do your figures have captions?
+Are your figures legible?
+Are you using headings and sub-headings effectively in your report?
+
+When running a test,
+State the null and alternative hypotheses.
+Use visulisation to comment the assumption of the data.
+Perform a suitable test (including checking any relevant assumptions and, where appropriate, justify why you chose that test over others that test the same hypothesis).
+Report the test statistic and p-value.
+Draw your conclusion about the null hypothesis based on the p-value and interpret this in the context of the original question.
+
 ## Importing data
 
 ```{r import}
@@ -72,4 +87,9 @@ data = data %>%
 data %>% count(DNAfragment)
 data %>% group_by(tg, DNA) %>% count()
 ```
+
+## General Questions to think about
+Are there differences between transgenic and non-transgenic mice? Assess the size of the difference. That is, are the differences you found big enough to indicate that a particular region of DNA contains the Down Syndrome genes? 
+
+Does sex play a role? If so, by itself or does it interact with other factors?
 
