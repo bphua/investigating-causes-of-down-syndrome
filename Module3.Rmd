@@ -40,6 +40,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.align =
 ## Introduction
 ## Results
 ## Conclusion
+## Test
 
 ## Things to keep in mind
 For this module report you will be assessed on your ability to generate appropriate statistical questions, explore these with graphical summaries and statistical tests and interpret your findings. To achieve full marks, your report will also need to be well-presented:
