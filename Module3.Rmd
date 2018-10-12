@@ -66,7 +66,7 @@ data <- read_table("mouse.txt")
 ```
 
 ## Cleaning data
-```{r}
+```{r, results='hide'}
 data = data %>% mutate(
   sex = if_else(sex == 1, "Male", "Female"),
   DNA = case_when(DNA == 1 ~ "141G6",
@@ -89,8 +89,60 @@ data %>% count(DNAfragment)
 data %>% group_by(tg, DNA) %>% count()
 ```
 
-## General Questions to think about
-Are there differences between transgenic and non-transgenic mice? Assess the size of the difference. That is, are the differences you found big enough to indicate that a particular region of DNA contains the Down Syndrome genes? 
+The following things are from the lab components as an idea of what we could be doing:
 
-Does sex play a role? If so, by itself or does it interact with other factors?
+Explore the data graphically. Is there a difference between the weights of transgenic and nontransgenic mice? Does sex affect this? For which fragment or fragments of the DNA are there differences?
+
+```{r}
+# graphical exploration of data
+# will first look at transgenic vs non-transgenic weight, and have it spearated by sex. the paper states that there is a weight difference between sex of mice, which is why this differentiation has to be made.
+ggplot(data, aes(y = weight, x = DNAfragment, colour = sex)) + 
+  geom_boxplot() + theme_bw() + facet_wrap(~sex, ncol = 2)
+
+# what exactly does this actually tell us?
+ggplot(data, aes(sample = weight)) + 
+  geom_qq() + geom_qq_line() + theme_bw() + facet_wrap(~sex, ncol = 2)
+
+data = data %>% mutate(log_weight=log(weight))
+ggplot(data, aes(y = log_weight, x = DNAfragment, colour = sex)) + 
+  geom_boxplot() + theme_bw() + facet_wrap(~sex, ncol = 2)
+
+# what exactly does this actually tell us?
+ggplot(data, aes(sample = log_weight)) + 
+  geom_qq() + geom_qq_line() + theme_bw() + facet_wrap(~sex, ncol = 2)
+```
+
+It can be seen that if weight is an indicator for Down syndrome in mice, not all injected DNA fragements can directly be identified to be causing Down syndrome. Some fragments cause higher weight on average, while some even cause lower weight.
+To qualify these differences we perform tests for the following hypothesis: H0: mu_none=mu_1=mu_2=mu_3=mu_4 against H1: all averages being statistically different.
+
+Generate appropriate summary statistics (including sample sizes) for various subgroups of your data.
+
+Consider the one-way classification based on DNA fragment. Is the weight of mice between the different DNA fragment groups different? Please state carefully your null hypothesis. Does the conclusion hold if we consider the male and female mice seperately?
+
+```{r}
+a2 = aov(weight ~ DNAfragment * sex, data = data)
+summary(a2)
+library(emmeans)
+emmip(a2, DNAfragment ~ sex) + theme_classic()
+emmip(a2, sex ~ DNAfragment) + theme_classic()
+
+library(ggfortify)
+autoplot(a2, which = c(1, 2)) + theme_classic()
+
+
+
+# log version:
+a3 = aov(log_weight ~ DNAfragment * sex, data = data)
+summary(a3)
+library(emmeans)
+emmip(a3, DNAfragment ~ sex) + theme_classic()
+emmip(a3, sex ~ DNAfragment) + theme_classic()
+
+library(ggfortify)
+autoplot(a3, which = c(1, 2)) + theme_classic()
+```
+
+It can be seen from the two-way ANOVA, that the interaction between sex and DNA-fragement can't be dropped! Now we need to perform post-hoc operations to determine which ones are significant.
+
+residuals are approximately correct, with a slight skew to below zero, but the normality is less satisfied, with a significant violation as we get to the higher values, with a large number of outliers. The same behaviour could already be seen on the boxplot before
 
