@@ -1,6 +1,6 @@
 ---
 title: "Module 3 Report"
-author: '450132759'
+author: '450132759 / 450463055'
 date: "October 2, 2018"
 output: 
   prettydoc::html_pretty:
@@ -8,64 +8,58 @@ output:
     highlight: null # syntax highlighting
     css: custom.css # custom css file to change font family and size
 ---
-<style>
-@import url('https://fonts.googleapis.com/css?family=Roboto+Mono');
-@import url('https://fonts.googleapis.com/css?family=Lato');
-body{
-  font-family: 'Lato' !important;
-  font-size: 12pt;
-}
+<!-- <style> -->
+<!-- @import url('https://fonts.googleapis.com/css?family=Roboto+Mono'); -->
+<!-- @import url('https://fonts.googleapis.com/css?family=Lato'); -->
+<!-- body{ -->
+<!--   font-family: 'Lato' !important; -->
+<!--   font-size: 12pt; -->
+<!-- } -->
 
-code{
-  font-family: 'Roboto Mono' !important;
-  font-size: 12px;
-}
+<!-- code{ -->
+<!--   font-family: 'Roboto Mono' !important; -->
+<!--   font-size: 12px; -->
+<!-- } -->
 
-pre{
-  font-family: 'Roboto Mono' !important;
-  font-size: 12px
-}
+<!-- pre{ -->
+<!--   font-family: 'Roboto Mono' !important; -->
+<!--   font-size: 12px -->
+<!-- } -->
 
-td{
-  font-family: Lato !important;
-  font-size: 12pt;
-}
-</style>
+<!-- td{ -->
+<!--   font-family: Lato !important; -->
+<!--   font-size: 12pt; -->
+<!-- } -->
+<!-- </style> -->
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.align = "center")
 ```
 
-## Executive summary
-## Introduction
-## Results
-## Conclusion
-## Test
+### Executive summary
 
-## Things to keep in mind
-For this module report you will be assessed on your ability to generate appropriate statistical questions, explore these with graphical summaries and statistical tests and interpret your findings. To achieve full marks, your report will also need to be well-presented:
+### Introduction
+Down Syndrome is a congenital syndrome that occurs when a child inherits an
+extra chromosome 21 from his or her parents. In the 1980s, it was discovered that only the genes at the bottom of chromosome 21 cause the syndrome, and scientists today are working to further identify and isolate the genes on the chromosome responsible for the disorder. To do this, they genetically alter the DNA of lab mice by adding to it cloned human DNA that comes from a small part of chromosome 21. If the transgenically altered mice exhibit symptoms of Down Syndrome, then that fragment of DNA contains the
+genes responsible for the syndrome.
 
-Think about how your report might be structured (e.g. Executive Summary, Introduction, Results, Conclusion).
-Do your figures have captions?
-Are your figures legible?
-Are you using headings and sub-headings effectively in your report?
+We have data on 511 lab mice who may or may not have the genetically altered gene. The parts of the genes introduced to transgenic mice are 230E8, 141G6, 152F7, and 285E6. As the mice are born blind, usual tests for mental retardation cannot be performed. To get around this, it is suggested that mice with higher weights might exhibit the same symtoms of down symdrome in humans - obesity.
 
-When running a test,
-State the null and alternative hypotheses.
-Use visulisation to comment the assumption of the data.
-Perform a suitable test (including checking any relevant assumptions and, where appropriate, justify why you chose that test over others that test the same hypothesis).
-Report the test statistic and p-value.
-Draw your conclusion about the null hypothesis based on the p-value and interpret this in the context of the original question.
+We shall attempt to isolate and identify which gene might be resposible for higher weights in mice, and we will use the ANOVA method and contrasts to reach a conclusion.
 
 ## Importing data
-
+First, we import the data into our project.
 ```{r import}
 library(tidyverse)
 library(gridExtra)
+library(emmeans)
+library(ggfortify)
 data <- read_table("mouse.txt")
 ```
 
 ## Cleaning data
+Then, we assign meaningful categorical lables to sex, DNA, and transgenicity. We also look at the sample sizes for each gene and for each gene and transgenicity combination. We observe the sample sizes of mice with the 230E8 gene is significantly lower than the sample sizes of the other genes, and that there is an approximately equal amount of transgenic and non-transgenic mice. 
+
 ```{r, results='hide'}
 data = data %>% mutate(
   sex = if_else(sex == 1, "Male", "Female"),
@@ -89,60 +83,124 @@ data %>% count(DNAfragment)
 data %>% group_by(tg, DNA) %>% count()
 ```
 
-The following things are from the lab components as an idea of what we could be doing:
+#### Now that the data has been cleaned, we would like to identify if there is a significant difference in weights between transgenic and non-transgenic mice. It is also known that male mice on average tend to weigh about 5 grams more than female mice. Comparing groups of mixed-sex mice may reveal very little because a small transgenic difference could be hidden or canceled out by the difference between sexes. So, we also need to see if our results are different if we look at male and female mice separately.
 
-Explore the data graphically. Is there a difference between the weights of transgenic and nontransgenic mice? Does sex affect this? For which fragment or fragments of the DNA are there differences?
+We explore the data graphically and perform a quick numerical analysis using one-way ANOVA informally.
 
 ```{r}
-# graphical exploration of data
-# will first look at transgenic vs non-transgenic weight, and have it spearated by sex. the paper states that there is a weight difference between sex of mice, which is why this differentiation has to be made.
+ggplot(data, aes(y=weight, x=tg)) + 
+  geom_boxplot() + 
+  theme_classic()
+
+aov.tg = aov(weight ~ tg, data = data)
+summary(aov.tg)
+```
+
+Both graphical and numerical results (p-value < 0.01) suggests that there does seem to be a difference between the weights of transgenic and nontransgenic mice. However, we would also like to look at male and female mice separately.
+
+```{r}
+ggplot(data, aes(y=weight, x=tg, colour=sex)) + 
+  geom_boxplot() + 
+  theme_bw() + 
+  facet_wrap(~sex, ncol = 2)
+
+aov.tg.sex = aov(weight ~ tg * sex, data = data)
+summary(aov.tg.sex)
+```
+
+When we do look at them separately, we can see that there is no significant difference (p-value = 0.515 > 0.05) within the male and female weights of transgenic and nontransgenic mice.
+
+#### Consider the one-way classification based on DNA fragment. Is the weight of mice between the different DNA fragment groups different? If appropriate, consider post-hoc tests to identify which pairwise comparisons are significantly different. Please state carefully your null hypothesis. Does the conclusion hold if we consider the male and female mice seperately?
+
+Now, we explore graphically to see which fragments of the DNA are different.
+
+```{r}
 ggplot(data, aes(y = weight, x = DNAfragment, colour = sex)) + 
   geom_boxplot() + theme_bw() + facet_wrap(~sex, ncol = 2)
-
-# what exactly does this actually tell us?
-ggplot(data, aes(sample = weight)) + 
-  geom_qq() + geom_qq_line() + theme_bw() + facet_wrap(~sex, ncol = 2)
-
-data = data %>% mutate(log_weight=log(weight))
-ggplot(data, aes(y = log_weight, x = DNAfragment, colour = sex)) + 
-  geom_boxplot() + theme_bw() + facet_wrap(~sex, ncol = 2)
-
-# what exactly does this actually tell us?
-ggplot(data, aes(sample = log_weight)) + 
-  geom_qq() + geom_qq_line() + theme_bw() + facet_wrap(~sex, ncol = 2)
 ```
 
 It can be seen that if weight is an indicator for Down syndrome in mice, not all injected DNA fragements can directly be identified to be causing Down syndrome. Some fragments cause higher weight on average, while some even cause lower weight.
-To qualify these differences we perform tests for the following hypothesis: H0: mu_none=mu_1=mu_2=mu_3=mu_4 against H1: all averages being statistically different.
 
-Generate appropriate summary statistics (including sample sizes) for various subgroups of your data.
+To quantify these differences we perform a formal test using one-way ANOVA. We also test the validity of our assumptions.
 
-Consider the one-way classification based on DNA fragment. Is the weight of mice between the different DNA fragment groups different? Please state carefully your null hypothesis. Does the conclusion hold if we consider the male and female mice seperately?
+**Formal One-way ANOVA Test**
 
+Let $\mu_0, \mu_1, \mu_2, \mu_3, \mu_4$ represent the population means of non-transgenic, 141G6, 152F7, 230E8, and 285E6 mice, respectively.
+
+**Hypothesis**
+
+$H_0: \mu_0 = \mu_1 = \mu_2 = \mu_3 = \mu_4$
+
+$H_0: $ One of $\mu_0, \mu_1, \mu_2, \mu_3, \mu_4$ does not equal to the other
+
+**Assumptions**
+
+Each sample is from a normal population and all population variances are equal.
+
+We first test our normality and equal variance assumptions.
 ```{r}
-a2 = aov(weight ~ DNAfragment * sex, data = data)
-summary(a2)
-library(emmeans)
-emmip(a2, DNAfragment ~ sex) + theme_classic()
-emmip(a2, sex ~ DNAfragment) + theme_classic()
-
-library(ggfortify)
-autoplot(a2, which = c(1, 2)) + theme_classic()
-
-
-
-# log version:
-a3 = aov(log_weight ~ DNAfragment * sex, data = data)
-summary(a3)
-library(emmeans)
-emmip(a3, DNAfragment ~ sex) + theme_classic()
-emmip(a3, sex ~ DNAfragment) + theme_classic()
-
-library(ggfortify)
-autoplot(a3, which = c(1, 2)) + theme_classic()
+aov.tg = aov(weight ~ DNAfragment, data = data)
+autoplot(aov.tg, which = c(1, 2)) + theme_classic()
 ```
 
+There is no apparent pattern in the residual vs fitted values plot, hence the common variance assumption is OK. Similarly, the points in the normal QQ plot are all reasonably close to the diagonal line, which suggests that the normality assumption is at least approximately satisfied.
+
+```{r}
+anova(aov.tg)
+
+fit_em = emmeans(aov.tg, ~DNAfragment)
+em_pair = contrast(fit_em, method = "pairwise", adjust = "bonferroni")
+
+plot(em_pair) + geom_vline(xintercept = 0)
+```
+
+Because our results show a p-value of <0.001, we reject the null hypothesis that there is no difference between the DNA fragment groups. Using post-hoc analysis, we see that the weights of mice from the 152F7 DNA fragment group is significantly different from the weights of non-transgenic mice. We can therefore conclude that there is significance evidence that suggests that the 152F7 DNA fragment results in mice with higher weight.
+
+We now test if our conclusion holds if we consider the male and female mice separately.
+
+```{r}
+aov.tg.sex = aov(weight ~ DNAfragment + sex, data = data)
+autoplot(aov.tg.sex, which = c(1, 2)) + theme_classic()
+```
+
+There is no apparent pattern in the residual vs fitted values plot, hence the common variance assumption is OK. Similarly, the points in the normal QQ plot are all reasonably close to the diagonal line, which suggests that the normality assumption is at least approximately satisfied.
+
+
+```{r}
+anova(aov.tg.sex)
+
+# I don't think we need these as we are not looking at interaction, just blocking
+#emmip(aov.tg.sex, DNAfragment ~ sex) + theme_classic()
+#emmip(aov.tg.sex, sex ~ DNAfragment) + theme_classic()
+
+fit_em = emmeans(aov.tg.sex, ~DNAfragment + sex)
+em_pair = contrast(fit_em, method = "pairwise", adjust = "bonferroni")
+
+plot(em_pair) + geom_vline(xintercept = 0)
+```
+
+From the contrast plot, considering the male and female mice separately does not change our previous conclusion, as the contrast between the weights of mice with the 152F7 DNA fragment and nontransgenic mice of the same respective sexes are still significant. 
+
+(Not sure if we're looking at interaction here...)
 It can be seen from the two-way ANOVA, that the interaction between sex and DNA-fragement can't be dropped! Now we need to perform post-hoc operations to determine which ones are significant.
 
+(Not sure if we can just say it's reasonably normal or if we need to perform a transform...)
 residuals are approximately correct, with a slight skew to below zero, but the normality is less satisfied, with a significant violation as we get to the higher values, with a large number of outliers. The same behaviour could already be seen on the boxplot before
 
+## Results
+## Conclusion
+
+## Things to keep in mind
+For this module report you will be assessed on your ability to generate appropriate statistical questions, explore these with graphical summaries and statistical tests and interpret your findings. To achieve full marks, your report will also need to be well-presented:
+
+Think about how your report might be structured (e.g. Executive Summary, Introduction, Results, Conclusion).
+Do your figures have captions?
+Are your figures legible?
+Are you using headings and sub-headings effectively in your report?
+
+When running a test,
+State the null and alternative hypotheses.
+Use visulisation to comment the assumption of the data.
+Perform a suitable test (including checking any relevant assumptions and, where appropriate, justify why you chose that test over others that test the same hypothesis).
+Report the test statistic and p-value.
+Draw your conclusion about the null hypothesis based on the p-value and interpret this in the context of the original question.
