@@ -36,9 +36,9 @@ output:
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.align = "center")
 ```
 
-### Executive summary
+## Executive summary
 
-### Introduction
+## Introduction
 Down Syndrome is a congenital syndrome that occurs when a child inherits an
 extra chromosome 21 from his or her parents. In the 1980s, it was discovered that only the genes at the bottom of chromosome 21 cause the syndrome, and scientists today are working to further identify and isolate the genes on the chromosome responsible for the disorder. To do this, they genetically alter the DNA of lab mice by adding to it cloned human DNA that comes from a small part of chromosome 21. If the transgenically altered mice exhibit symptoms of Down Syndrome, then that fragment of DNA contains the
 genes responsible for the syndrome.
@@ -83,40 +83,79 @@ data %>% count(DNAfragment)
 data %>% group_by(tg, DNA) %>% count()
 ```
 
-#### Now that the data has been cleaned, we would like to identify if there is a significant difference in weights between transgenic and non-transgenic mice. It is also known that male mice on average tend to weigh about 5 grams more than female mice. Comparing groups of mixed-sex mice may reveal very little because a small transgenic difference could be hidden or canceled out by the difference between sexes. So, we also need to see if our results are different if we look at male and female mice separately.
+Now that the data has been cleaned, **we would like to identify if there is a significant difference in weights between transgenic and non-transgenic mice**. It is also known that male mice on average tend to weigh about 5 grams more than female mice. Comparing groups of mixed-sex mice may reveal very little because a small transgenic difference could be hidden or canceled out by the difference between sexes. So, we also need to see if our results are different if we look at male and female mice separately.
 
-We explore the data graphically and perform a quick numerical analysis using one-way ANOVA informally.
+We explore the data graphically and perform a numerical analysis using one-way ANOVA.
+
+**Formal One-way ANOVA Test**
+
+Let $\mu_0, \mu_1$ represent the population means of non-transgenic and transgenic mice, respectively.
+
+**Hypothesis**
+
+$H_0: \mu_0 = \mu_1$
+
+$H_1: \mu_0 \ne1 \mu_1$
+
+**Assumptions**
+
+Each sample is from a normal population and all population variances are equal. There is no apparent pattern in the residual vs fitted values plot, hence the common variance assumption is OK. Similarly, the points in the normal QQ plot are all reasonably close to the diagonal line, which suggests that the normality assumption is at least approximately satisfied.
 
 ```{r}
-ggplot(data, aes(y=weight, x=tg)) + 
+ggplot(data, aes(y=weight, x=tg, colour = tg)) + 
   geom_boxplot() + 
-  theme_classic()
+  theme_classic() + 
+  labs(title="Weights by transgenicity")
 
 aov.tg = aov(weight ~ tg, data = data)
 summary(aov.tg)
+
+ggplot(data, aes(sample=weight, colour=tg)) + 
+  geom_qq() +
+  geom_qq_line() + 
+  facet_wrap(~tg) + 
+  theme_classic() + 
+  labs(title="Normal QQ-plot")
 ```
 
-Both graphical and numerical results (p-value < 0.01) suggests that there does seem to be a difference between the weights of transgenic and nontransgenic mice. However, we would also like to look at male and female mice separately.
+**Test statistic and p-value**
+
+F-statistic = 11.06, pvalue < 0.001
+
+Both graphical and numerical results (p-value < 0.01) suggests that there does seem to be a difference between the weights of transgenic and nontransgenic mice. However, we would also like to look at male and female mice separately:
 
 ```{r}
 ggplot(data, aes(y=weight, x=tg, colour=sex)) + 
   geom_boxplot() + 
   theme_bw() + 
-  facet_wrap(~sex, ncol = 2)
+  facet_wrap(~sex, ncol = 2) + 
+  labs(title="Weights by Transgenicity and Sex")
 
 aov.tg.sex = aov(weight ~ tg * sex, data = data)
 summary(aov.tg.sex)
+
+ggplot(data, aes(sample=weight, colour=tg)) + 
+  geom_qq() +
+  geom_qq_line() + 
+  facet_wrap(~tg+sex) + 
+  theme_classic() + 
+  labs(title="Normal QQ-plot")
 ```
 
-When we do look at them separately, we can see that there is no significant difference (p-value = 0.515 > 0.05) within the male and female weights of transgenic and nontransgenic mice.
+**Test statistic and p-value**
+
+F-statistic = 0.425, pvalue = 0.515 > 0.05
+
+When we do look at them separately, we can see that there is no significant difference (p-value = 0.515 > 0.05) at the 5% significance level within the male and female weights of transgenic and nontransgenic mice.
 
 #### Consider the one-way classification based on DNA fragment. Is the weight of mice between the different DNA fragment groups different? If appropriate, consider post-hoc tests to identify which pairwise comparisons are significantly different. Please state carefully your null hypothesis. Does the conclusion hold if we consider the male and female mice seperately?
 
 Now, we explore graphically to see which fragments of the DNA are different.
 
 ```{r}
-ggplot(data, aes(y = weight, x = DNAfragment, colour = sex)) + 
-  geom_boxplot() + theme_bw() + facet_wrap(~sex, ncol = 2)
+ggplot(data, aes(y = weight, x = DNAfragment, colour = DNAfragment)) + 
+  geom_boxplot() + 
+  theme_classic()
 ```
 
 It can be seen that if weight is an indicator for Down syndrome in mice, not all injected DNA fragements can directly be identified to be causing Down syndrome. Some fragments cause higher weight on average, while some even cause lower weight.
@@ -131,7 +170,7 @@ Let $\mu_0, \mu_1, \mu_2, \mu_3, \mu_4$ represent the population means of non-tr
 
 $H_0: \mu_0 = \mu_1 = \mu_2 = \mu_3 = \mu_4$
 
-$H_0: $ One of $\mu_0, \mu_1, \mu_2, \mu_3, \mu_4$ does not equal to the other
+$H_1: $ One of $\mu_0, \mu_1, \mu_2, \mu_3, \mu_4$ does not equal to the other
 
 **Assumptions**
 
@@ -141,6 +180,11 @@ We first test our normality and equal variance assumptions.
 ```{r}
 aov.tg = aov(weight ~ DNAfragment, data = data)
 autoplot(aov.tg, which = c(1, 2)) + theme_classic()
+ggplot(data, aes(sample=weight, colour=DNAfragment)) + 
+  geom_qq() +
+  geom_qq_line() + 
+  facet_wrap(~DNAfragment) + 
+  theme_classic()
 ```
 
 There is no apparent pattern in the residual vs fitted values plot, hence the common variance assumption is OK. Similarly, the points in the normal QQ plot are all reasonably close to the diagonal line, which suggests that the normality assumption is at least approximately satisfied.
@@ -153,14 +197,30 @@ em_pair = contrast(fit_em, method = "pairwise", adjust = "bonferroni")
 
 plot(em_pair) + geom_vline(xintercept = 0)
 ```
+**Test statistic and p-value**
+
+F-statistic = 8.74, pvalue < 0.001
+
+There is a significant difference between the weights of mice with different genes.
 
 Because our results show a p-value of <0.001, we reject the null hypothesis that there is no difference between the DNA fragment groups. Using post-hoc analysis, we see that the weights of mice from the 152F7 DNA fragment group is significantly different from the weights of non-transgenic mice. We can therefore conclude that there is significance evidence that suggests that the 152F7 DNA fragment results in mice with higher weight.
 
 We now test if our conclusion holds if we consider the male and female mice separately.
 
 ```{r}
-aov.tg.sex = aov(weight ~ DNAfragment + sex, data = data)
+ggplot(data, aes(y = weight, x = DNAfragment, colour = sex)) + 
+  geom_boxplot() +
+  theme_classic() + 
+  facet_wrap(~sex)
+
+aov.tg.sex = aov(weight ~ DNAfragment * sex, data = data)
 autoplot(aov.tg.sex, which = c(1, 2)) + theme_classic()
+
+ggplot(data, aes(sample=weight, colour=DNAfragment)) + 
+  geom_qq() +
+  geom_qq_line() + 
+  facet_wrap(~DNAfragment+sex) + 
+  theme_classic()
 ```
 
 There is no apparent pattern in the residual vs fitted values plot, hence the common variance assumption is OK. Similarly, the points in the normal QQ plot are all reasonably close to the diagonal line, which suggests that the normality assumption is at least approximately satisfied.
@@ -168,12 +228,19 @@ There is no apparent pattern in the residual vs fitted values plot, hence the co
 
 ```{r}
 anova(aov.tg.sex)
+```
 
+**Test statistic and p-value**
+
+F-statistic = 3.6216, p-value < 0.01
+
+It can be seen from the two-way ANOVA, that the interaction between sex and DNA-fragement can't be dropped! Now we need to perform post-hoc operations to determine which ones are significant.
+```{r}
 # I don't think we need these as we are not looking at interaction, just blocking
 #emmip(aov.tg.sex, DNAfragment ~ sex) + theme_classic()
 #emmip(aov.tg.sex, sex ~ DNAfragment) + theme_classic()
 
-fit_em = emmeans(aov.tg.sex, ~DNAfragment + sex)
+fit_em = emmeans(aov.tg.sex, ~DNAfragment * sex)
 em_pair = contrast(fit_em, method = "pairwise", adjust = "bonferroni")
 
 plot(em_pair) + geom_vline(xintercept = 0)
@@ -181,14 +248,11 @@ plot(em_pair) + geom_vline(xintercept = 0)
 
 From the contrast plot, considering the male and female mice separately does not change our previous conclusion, as the contrast between the weights of mice with the 152F7 DNA fragment and nontransgenic mice of the same respective sexes are still significant. 
 
-(Not sure if we're looking at interaction here...)
-It can be seen from the two-way ANOVA, that the interaction between sex and DNA-fragement can't be dropped! Now we need to perform post-hoc operations to determine which ones are significant.
-
 (Not sure if we can just say it's reasonably normal or if we need to perform a transform...)
 residuals are approximately correct, with a slight skew to below zero, but the normality is less satisfied, with a significant violation as we get to the higher values, with a large number of outliers. The same behaviour could already be seen on the boxplot before
 
-## Results
 ## Conclusion
+Mice with the 152F7 gene exhibit significantly higher weights than non-transgenic mice. If higher weight in mice is linked to a physical symptom of down syndrome in mice, it could potentially also be the gene that is linked to down syndrome in humans. Perhaps the next step would be to breed transgenic mice with this gene and perform more tests on them to isolate and identify the gene responsible for down syndrome in humans.
 
 ## Things to keep in mind
 For this module report you will be assessed on your ability to generate appropriate statistical questions, explore these with graphical summaries and statistical tests and interpret your findings. To achieve full marks, your report will also need to be well-presented:
