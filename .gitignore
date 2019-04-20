@@ -4,3 +4,7 @@
 .Ruserdata
 *.html
 *.Rproj
+*.zip
+*.ini
+Progress2.Rmd
+
